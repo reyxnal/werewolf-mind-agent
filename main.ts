@@ -499,6 +499,14 @@ function decideVote(view: View, options: Seat[]): Seat | null {
     known.sort((a, c) => (tally.get(c) ?? 0) - (tally.get(a) ?? 0) || a - c);
     return known[0]!;
   }
+  // A lone, unrefuted claimant's named wolf is the village's best lead: my
+  // speech already backs the claim, so the vote must not wander off it just
+  // because raw vote-tells elsewhere score a little higher.
+  const lone = b.claims.length === 1 ? b.claims[0] : undefined;
+  if (lone !== undefined && lone.seat !== me && !b.fakeSeer.has(lone.seat)) {
+    const named = lone.reports.find((r) => r.wolf && options.includes(r.target));
+    if (named !== undefined && (b.score.get(named.target) ?? 0) > -60) return named.target;
+  }
   const target = mostSuspected(b, options, new Set([me]));
   if (target === null) return null;
   // Never exile a seat I hold cleared when any other choice exists.
